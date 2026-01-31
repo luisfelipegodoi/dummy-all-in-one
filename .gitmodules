@@ -1,0 +1,12 @@
+[submodule "apiserver"]
+	path = apiserver
+	url = https://github.com/luisfelipegodoi/apiserver
+[submodule "controller-local"]
+	path = controller-local
+	url = https://github.com/luisfelipegodoi/controller-local
+[submodule "controller-runtime"]
+	path = controller-runtime
+	url = https://github.com/luisfelipegodoi/controller-runtime
+[submodule "scheduller"]
+	path = scheduller
+	url = https://github.com/luisfelipegodoi/scheduller
