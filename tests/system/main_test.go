@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"tests/config"
 	"tests/utils"
 	"time"
 )
@@ -17,13 +18,25 @@ const (
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
+	cfgPath, err := config.Setup("")
+	if err != nil {
+		panic(err)
+	}
+
+	env, err := config.LoadEnv()
+	if err != nil {
+		panic(err)
+	}
+
+	_ = cfgPath // se quiser logar
+
 	// 1. Setup
 	rootFolder, err := utils.RepoRoot()
 	if err != nil {
-		fmt.Errorf(err.Error())
+		fmt.Errorf("error to get root folder. details: %s", err.Error())
 	}
 
-	clusterManifest := filepath.Join(rootFolder, testsWorkingDirectory, "infra/kind/cluster-a.yaml")
+	clusterManifest := filepath.Join(rootFolder, testsWorkingDirectory, env.ClusterManifest)
 
 	_, err = utils.ExecWithResult(ctx, utils.CmdOptions{Timeout: 2 * time.Minute},
 		"kind", "create", "cluster",
@@ -42,7 +55,7 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	// 3. Teardown
-	_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", "cluster-a")
+	_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", env.ClusterName)
 
 	os.Exit(code)
 }
