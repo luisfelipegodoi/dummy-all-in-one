@@ -99,17 +99,16 @@ func RepoRoot() (string, error) {
 	}
 
 	for {
-		gitPath := filepath.Join(dir, ".git")
-		if _, err := os.Stat(gitPath); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
 			return dir, nil
 		}
 
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			break // chegou na raiz do FS
+			break
 		}
 		dir = parent
 	}
 
-	return "", errors.New("git repository root not found (no .git directory)")
+	return "", errors.New("repo root not found: no .git directory")
 }

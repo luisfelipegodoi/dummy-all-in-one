@@ -4,20 +4,35 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"tests/utils"
 	"time"
+)
+
+const (
+	testsWorkingDirectory = "tests"
 )
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
 	// 1. Setup
-	clusterManifest := fmt.Sprintf("%s/%s", utils.RepoRoot())
-	utils.ExecWithResult(ctx, utils.CmdOptions{Timeout: 2 * time.Minute},
+	rootFolder, err := utils.RepoRoot()
+	if err != nil {
+		fmt.Errorf(err.Error())
+	}
+
+	clusterManifest := filepath.Join(rootFolder, testsWorkingDirectory, "infra/kind/cluster-a.yaml")
+
+	_, err = utils.ExecWithResult(ctx, utils.CmdOptions{Timeout: 2 * time.Minute},
 		"kind", "create", "cluster",
-		"--config", "tests/infra/kind/cluster-a.yaml",
+		"--config", clusterManifest,
 	)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
 	// utils.Exec(ctx, "kubectl", "apply", "-f", "tests/infra/k8s/namespaces.yaml")
 
