@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -10,71 +11,60 @@ import (
 )
 
 type Env struct {
-	ClusterName          string
-	ClusterManifest      string
-	KubeContext          string
-	CreateClusterTimeout time.Duration
-	ApplyTimeout         time.Duration
+	Cluster struct {
+		Name       string `mapstructure:"name"`
+		KindConfig string `mapstructure:"kindConfig"`
+		KubeCtx    string `mapstructure:"kubeContext"`
+	} `mapstructure:"cluster"`
+
+	Timeouts struct {
+		CreateCluster time.Duration `mapstructure:"createCluster"`
+		Apply         time.Duration `mapstructure:"apply"`
+	} `mapstructure:"timeouts"`
 }
 
-func LoadEnv() (Env, error) {
-	bindEnvVars()
+// LoadEnv reads config into Env, applies defaults and validates.
+func LoadEnv(v *viper.Viper, repoRoot string) (Env, error) {
+	var e Env
 
-	e := Env{
-		ClusterName:          viper.GetString("cluster.name"),
-		ClusterManifest:      viper.GetString("cluster.manifest"),
-		KubeContext:          viper.GetString("cluster.kubeContext"),
-		CreateClusterTimeout: viper.GetDuration("timeouts.createCluster"),
-		ApplyTimeout:         viper.GetDuration("timeouts.apply"),
+	// Defaults
+	v.SetDefault("cluster.name", "system-tests-lab")
+	v.SetDefault("timeouts.createCluster", "2m")
+	v.SetDefault("timeouts.apply", "2m")
+
+	// Unmarshal
+	if err := v.Unmarshal(&e); err != nil {
+		return Env{}, fmt.Errorf("unmarshal env: %w", err)
 	}
 
-	applyDefaults(&e)
+	// Defaults derivados
+	if strings.TrimSpace(e.Cluster.KubeCtx) == "" {
+		e.Cluster.KubeCtx = "kind-" + e.Cluster.Name
+	}
 
-	if err := e.Validate(); err != nil {
+	// Resolve path: aceita relativo ao repo root
+	if e.Cluster.KindConfig != "" && !filepath.IsAbs(e.Cluster.KindConfig) && repoRoot != "" {
+		e.Cluster.KindConfig = filepath.Join(repoRoot, e.Cluster.KindConfig)
+	}
+
+	if err := validateEnv(e); err != nil {
 		return Env{}, err
 	}
-
 	return e, nil
 }
 
-func bindEnvVars() {
-	_ = viper.BindEnv("cluster.name", "DUMMY_CLUSTER_NAME")
-	_ = viper.BindEnv("cluster.kindConfig", "DUMMY_CLUSTER_KIND_CONFIG")
-	_ = viper.BindEnv("cluster.kubeContext", "DUMMY_CLUSTER_KUBE_CONTEXT")
-	_ = viper.BindEnv("timeouts.createCluster", "DUMMY_TIMEOUT_CREATE_CLUSTER")
-	_ = viper.BindEnv("timeouts.apply", "DUMMY_TIMEOUT_APPLY")
-}
-
-func applyDefaults(e *Env) {
-	if strings.TrimSpace(e.ClusterName) == "" {
-		e.ClusterName = "system-tests-lab"
-	}
-	if strings.TrimSpace(e.KubeContext) == "" {
-		e.KubeContext = "kind-" + e.ClusterName
-	}
-	if e.CreateClusterTimeout == 0 {
-		e.CreateClusterTimeout = 2 * time.Minute
-	}
-	if e.ApplyTimeout == 0 {
-		e.ApplyTimeout = 2 * time.Minute
-	}
-}
-
-func (e Env) Validate() error {
-	if strings.TrimSpace(e.ClusterName) == "" {
+func validateEnv(e Env) error {
+	if strings.TrimSpace(e.Cluster.Name) == "" {
 		return errors.New("cluster.name is required")
 	}
-	if strings.TrimSpace(e.ClusterManifest) == "" {
-		return errors.New("cluster.manifest is required")
+	if strings.TrimSpace(e.Cluster.KindConfig) == "" {
+		return errors.New("cluster.kindConfig is required")
 	}
-	if strings.TrimSpace(e.KubeContext) == "" {
-		return errors.New("cluster.kubeContext is required")
+	if e.Timeouts.CreateCluster <= 0 {
+		return fmt.Errorf("timeouts.createCluster must be > 0 (got %s)", e.Timeouts.CreateCluster)
 	}
-	if e.CreateClusterTimeout <= 0 {
-		return fmt.Errorf("timeouts.createCluster must be > 0 (got %s)", e.CreateClusterTimeout)
-	}
-	if e.ApplyTimeout <= 0 {
-		return fmt.Errorf("timeouts.apply must be > 0 (got %s)", e.ApplyTimeout)
+	if e.Timeouts.Apply <= 0 {
+		return fmt.Errorf("timeouts.apply must be > 0 (got %s)", e.Timeouts.Apply)
 	}
 	return nil
 }
