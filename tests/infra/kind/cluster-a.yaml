@@ -1,0 +1,16 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: cluster-a
+
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # Porta para expor Ingress / API Gateway
+      - containerPort: 30080
+        hostPort: 32070
+        protocol: TCP
+
+      # Porta opcional para métricas, debug, etc
+      - containerPort: 30090
+        hostPort: 32090
+        protocol: TCP
