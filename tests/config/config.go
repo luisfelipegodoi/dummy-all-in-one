@@ -26,7 +26,7 @@ func (l Loader) LoadViper() (*viper.Viper, string, error) {
 
 	// Prefer deterministic: repo root + /tests/env.yaml
 	if repoRoot, err := findRepoRoot(start); err == nil {
-		candidate := filepath.Join(repoRoot, "tests", l.FileName)
+		candidate := filepath.Join(repoRoot, l.FileName)
 		if fileExists(candidate) {
 			return readViper(candidate)
 		}
@@ -75,7 +75,7 @@ func findUpwards(dir, file string) (string, error) {
 func findRepoRoot(dir string) (string, error) {
 	dir = filepath.Clean(dir)
 	for {
-		if fileExists(filepath.Join(dir, ".git")) {
+		if fileExists(filepath.Join(dir, "env.yaml")) {
 			return dir, nil
 		}
 		parent := filepath.Dir(dir)
@@ -84,7 +84,7 @@ func findRepoRoot(dir string) (string, error) {
 		}
 		dir = parent
 	}
-	return "", errors.New("repo root not found (.git)")
+	return "", errors.New("repo root not found (env.yaml)")
 }
 
 func fileExists(path string) bool {
