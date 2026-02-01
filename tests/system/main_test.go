@@ -4,58 +4,46 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
+
 	"tests/config"
 	"tests/utils"
-	"time"
-)
-
-const (
-	testsWorkingDirectory = "tests"
 )
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
-	cfgPath, err := config.Setup("")
+	loaded, err := config.Load()
 	if err != nil {
-		panic(err)
+		fmt.Fprintln(os.Stderr, "config load failed:", err)
+		os.Exit(1)
 	}
 
-	env, err := config.LoadEnv()
-	if err != nil {
-		panic(err)
-	}
+	env := loaded.Env
 
-	_ = cfgPath // se quiser logar
-
-	// 1. Setup
-	rootFolder, err := utils.RepoRoot()
-	if err != nil {
-		fmt.Errorf("error to get root folder. details: %s", err.Error())
-	}
-
-	clusterManifest := filepath.Join(rootFolder, testsWorkingDirectory, env.ClusterManifest)
-
-	_, err = utils.ExecWithResult(ctx, utils.CmdOptions{Timeout: 2 * time.Minute},
+	// 1) Setup: create cluster
+	_, err = utils.ExecWithResult(ctx, utils.CmdOptions{Timeout: env.Timeouts.CreateCluster},
 		"kind", "create", "cluster",
-		"--config", clusterManifest,
+		"--name", env.Cluster.Name,
+		"--config", env.Cluster.KindConfig,
 	)
-
 	if err != nil {
-		fmt.Println(err.Error())
+		// Se quiser idempotência, trate "already exists" aqui (ver seção 4)
+		fmt.Fprintln(os.Stderr, "kind create failed:", err)
+		os.Exit(1)
 	}
 
-	// utils.Exec(ctx, "kubectl", "apply", "-f", "tests/infra/k8s/namespaces.yaml")
+	// (Opcional) aplicar namespaces
+	// _, _ = utils.ExecWithResult(ctx, utils.CmdOptions{Timeout: env.Timeouts.Apply},
+	// 	"kubectl", "--context", env.Cluster.KubeCtx,
+	// 	"apply", "-f", filepath.Join(loaded.RepoRoot, "tests/infra/k8s/namespaces.yaml"),
+	// )
 
-	// (aqui depois entra ingress, deps, etc)
-
-	// 2. Run tests
+	// 2) Run tests
 	code := m.Run()
 
-	// 3. Teardown
-	_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", env.ClusterName)
+	// 3) Teardown (best effort)
+	_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", env.Cluster.Name)
 
 	os.Exit(code)
 }
