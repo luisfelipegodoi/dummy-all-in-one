@@ -17,6 +17,11 @@ type Env struct {
 		KubeCtx    string `mapstructure:"kubeContext"`
 	} `mapstructure:"cluster"`
 
+	Localstack struct {
+		Release   string `mapstructure:"release"`
+		Namespace string `mapstructure:"namespace"`
+	}
+
 	Timeouts struct {
 		CreateCluster time.Duration `mapstructure:"createCluster"`
 		Apply         time.Duration `mapstructure:"apply"`
