@@ -2,40 +2,43 @@ package system
 
 import (
 	"context"
-	"fmt"
 	"tests/config"
+	"tests/system/spec"
 	"tests/utils"
 )
 
 type ClusterTarget struct {
-	Key        string // cluster-a (chave no env)
+	Key        string
 	Name       string
 	KubeCtx    string
 	KindConfig string
 }
 
-func SetupInfra(ctx context.Context, spec InfraSpec, env config.Env, loaded config.Loaded) error {
-	kub := utils.Kubectl{Context: env.Cluster.KubeCtx}
+func SetupInfra(ctx context.Context, target ClusterTarget, infra spec.InfraSpec, env config.Env, loaded config.Loaded) error {
+	kub := utils.Kubectl{Context: target.Name}
 
-	fmt.Println(kub)
+	// kind load --name target.Name
+	// kubectl --context target.KubeCtx
+	// helm --kube-context target.KubeCtx
 
-	if spec.Localstack {
+	if infra.Localstack {
 		// TODO: mover aqui o código de helm localstack do main_test
+		kub.ApplyFile(ctx, "")
 	}
 
-	if spec.DynamoSeed {
+	if infra.DynamoSeed {
 		// TODO: mover aqui o job do dynamodb
 	}
 
-	if spec.NATS {
+	if infra.NATS {
 		// TODO: docker pull + kind load + kubectl apply nats.yaml
 	}
 
-	if spec.Redis {
+	if infra.Redis {
 		// TODO: futuro
 	}
 
-	if spec.ArgoCD {
+	if infra.ArgoCD {
 		// TODO: futuro
 	}
 
@@ -52,6 +55,6 @@ func TargetsFromEnv(env config.Env) ([]ClusterTarget, error) {
 			KindConfig: c.KindConfig,
 		})
 	}
-	// opcional: ordenar para determinismo
+
 	return out, nil
 }

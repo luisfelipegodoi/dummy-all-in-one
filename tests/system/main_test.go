@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 
 		if err := SetupInfra(ctx, target, infra, env, loaded); err != nil {
 			fmt.Fprintln(os.Stderr, "setup infra failed:", err)
-
+			// best effort teardown dos clusters já criados
 			for key2 := range plan {
 				c2 := env.Clusters[key2]
 				_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", c2.Name)
