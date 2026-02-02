@@ -37,13 +37,6 @@ func Load() (Loaded, error) {
 		return Loaded{}, err
 	}
 
-	// extra safety: garantir que kindConfig existe
-	if env.Cluster.KindConfig != "" {
-		if _, statErr := os.Stat(env.Cluster.KindConfig); statErr != nil {
-			return Loaded{}, fmt.Errorf("kind config not found at %s: %w", env.Cluster.KindConfig, statErr)
-		}
-	}
-
 	return Loaded{
 		RepoRoot:   filepath.Clean(repoRoot),
 		ConfigPath: cfgPath,

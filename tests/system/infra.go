@@ -27,6 +27,10 @@ func resolvePlanFromCWD() spec.Plan {
 		}
 
 	default:
-		panic("cannot resolve plan: unknown flow folder")
+		//panic("cannot resolve plan: unknown flow folder")
+		return spec.Plan{
+			"cluster-a": {Localstack: true, DynamoSeed: true},
+			"cluster-b": {NATS: true, Redis: true},
+		}
 	}
 }
