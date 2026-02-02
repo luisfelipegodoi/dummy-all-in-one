@@ -6,9 +6,10 @@ import (
 	"tests/system/flows/aws_only"
 	"tests/system/flows/event_flow"
 	"tests/system/flows/platform_flow"
+	"tests/system/spec"
 )
 
-func resolveInfraFromCWD() InfraSpec {
+func resolveInfraFromCWD() spec.InfraSpec {
 	wd, _ := os.Getwd()
 
 	switch {
