@@ -22,6 +22,10 @@ type Env struct {
 		Namespace string `mapstructure:"namespace"`
 	}
 
+	Images map[string]struct {
+		Image string `mapstructure:"image"`
+	} `mapstructure:"images"`
+
 	Timeouts struct {
 		CreateCluster time.Duration `mapstructure:"createCluster"`
 		Apply         time.Duration `mapstructure:"apply"`
@@ -56,6 +60,17 @@ func LoadEnv(v *viper.Viper, repoRoot string) (Env, error) {
 		return Env{}, err
 	}
 	return e, nil
+}
+
+func (e Env) Image(name string) (string, error) {
+	img, ok := e.Images[name]
+	if !ok {
+		return "", fmt.Errorf("image %q not found in env.yaml", name)
+	}
+	if strings.TrimSpace(img.Image) == "" {
+		return "", fmt.Errorf("image %q has empty image field", name)
+	}
+	return img.Image, nil
 }
 
 func validateEnv(e Env) error {
