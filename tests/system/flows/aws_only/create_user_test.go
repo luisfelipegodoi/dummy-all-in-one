@@ -1,4 +1,4 @@
-package e2e
+package aws_only
 
 import (
 	"fmt"
