@@ -7,3 +7,6 @@ type InfraSpec struct {
 	Redis      bool
 	ArgoCD     bool
 }
+
+// por cluster (target) -> InfraSpec
+type Plan map[string]InfraSpec

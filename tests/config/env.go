@@ -1,35 +1,25 @@
 package config
 
 import (
-	"errors"
 	"fmt"
-	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
 type Env struct {
-	Cluster struct {
+	Clusters map[string]struct {
 		Name       string `mapstructure:"name"`
-		KindConfig string `mapstructure:"kindConfig"`
 		KubeCtx    string `mapstructure:"kubeContext"`
-	} `mapstructure:"cluster"`
-
-	Localstack struct {
-		Release   string `mapstructure:"release"`
-		Namespace string `mapstructure:"namespace"`
-	}
-
-	Images map[string]struct {
-		Image string `mapstructure:"image"`
-	} `mapstructure:"images"`
+		KindConfig string `mapstructure:"kindConfig"`
+	} `mapstructure:"clusters"`
 
 	Timeouts struct {
 		CreateCluster time.Duration `mapstructure:"createCluster"`
 		Apply         time.Duration `mapstructure:"apply"`
 	} `mapstructure:"timeouts"`
+
+	// images map (nats/redis etc) pode ficar como você já fez
 }
 
 // LoadEnv reads config into Env, applies defaults and validates.
@@ -46,40 +36,13 @@ func LoadEnv(v *viper.Viper, repoRoot string) (Env, error) {
 		return Env{}, fmt.Errorf("unmarshal env: %w", err)
 	}
 
-	// Defaults derivados
-	if strings.TrimSpace(e.Cluster.KubeCtx) == "" {
-		e.Cluster.KubeCtx = "kind-" + e.Cluster.Name
-	}
-
-	// Resolve path: aceita relativo ao repo root
-	if e.Cluster.KindConfig != "" && !filepath.IsAbs(e.Cluster.KindConfig) && repoRoot != "" {
-		e.Cluster.KindConfig = filepath.Join(repoRoot, e.Cluster.KindConfig)
-	}
-
 	if err := validateEnv(e); err != nil {
 		return Env{}, err
 	}
 	return e, nil
 }
 
-func (e Env) Image(name string) (string, error) {
-	img, ok := e.Images[name]
-	if !ok {
-		return "", fmt.Errorf("image %q not found in env.yaml", name)
-	}
-	if strings.TrimSpace(img.Image) == "" {
-		return "", fmt.Errorf("image %q has empty image field", name)
-	}
-	return img.Image, nil
-}
-
 func validateEnv(e Env) error {
-	if strings.TrimSpace(e.Cluster.Name) == "" {
-		return errors.New("cluster.name is required")
-	}
-	if strings.TrimSpace(e.Cluster.KindConfig) == "" {
-		return errors.New("cluster.kindConfig is required")
-	}
 	if e.Timeouts.CreateCluster <= 0 {
 		return fmt.Errorf("timeouts.createCluster must be > 0 (got %s)", e.Timeouts.CreateCluster)
 	}

@@ -3,23 +3,30 @@ package system
 import (
 	"os"
 	"strings"
-	"tests/system/flows/aws_only"
-	"tests/system/flows/event_flow"
-	"tests/system/flows/platform_flow"
 	"tests/system/spec"
 )
 
-func resolveInfraFromCWD() spec.InfraSpec {
+func resolvePlanFromCWD() spec.Plan {
 	wd, _ := os.Getwd()
 
 	switch {
 	case strings.Contains(wd, "aws_only"):
-		return aws_only.Infra
+		return spec.Plan{
+			"cluster-a": {Localstack: true, DynamoSeed: true},
+		}
+
 	case strings.Contains(wd, "event_flow"):
-		return event_flow.Infra
+		return spec.Plan{
+			"cluster-a": {Localstack: true, DynamoSeed: true},
+			"cluster-b": {NATS: true, Redis: true},
+		}
+
 	case strings.Contains(wd, "platform_flow"):
-		return platform_flow.Infra
+		return spec.Plan{
+			"cluster-b": {NATS: true, Redis: true, ArgoCD: true},
+		}
+
 	default:
-		panic("cannot resolve infra: unknown flow folder")
+		panic("cannot resolve plan: unknown flow folder")
 	}
 }

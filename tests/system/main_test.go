@@ -15,37 +15,65 @@ func TestMain(m *testing.M) {
 
 	loaded, err := config.Load()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "config load failed:", err)
+		fmt.Errorf("error to load configs")
 		os.Exit(1)
 	}
 
 	env := loaded.Env
 
-	// 1) Create cluster
-	if _, err := utils.ExecWithResult(ctx, utils.CmdOptions{Timeout: env.Timeouts.CreateCluster},
-		"kind", "create", "cluster",
-		"--name", env.Cluster.Name,
-		"--config", env.Cluster.KindConfig,
-	); err != nil {
-		fmt.Fprintln(os.Stderr, "kind create failed:", err)
-		os.Exit(1)
+	// 1) resolver plano (o que vai em qual cluster)
+	plan := resolvePlanFromCWD()
+
+	// 2) criar só os clusters que serão usados nesse flow
+	for key, infra := range plan {
+		_ = infra // só pra mostrar que usamos plan
+
+		c, ok := env.Clusters[key]
+		if !ok {
+			fmt.Fprintln(os.Stderr, "cluster not found in env.yaml:", key)
+			os.Exit(1)
+		}
+
+		if _, err := utils.ExecWithResult(ctx, utils.CmdOptions{Timeout: env.Timeouts.CreateCluster},
+			"kind", "create", "cluster",
+			"--name", c.Name,
+			"--config", c.KindConfig,
+		); err != nil {
+			fmt.Fprintln(os.Stderr, "kind create failed:", err)
+			os.Exit(1)
+		}
 	}
 
-	// 2) Resolve infra for this flow
-	spec := resolveInfraFromCWD()
+	// 3) SetupInfra por cluster-alvo
+	for key, infra := range plan {
+		c := env.Clusters[key]
 
-	// 3) Setup only what this flow needs
-	if err := SetupInfra(ctx, spec, env, loaded); err != nil {
-		fmt.Fprintln(os.Stderr, "setup infra failed:", err)
-		_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", env.Cluster.Name)
-		os.Exit(1)
+		target := ClusterTarget{
+			Key:        key,
+			Name:       c.Name,
+			KubeCtx:    c.KubeCtx,
+			KindConfig: c.KindConfig,
+		}
+
+		if err := SetupInfra(ctx, target, infra, env, loaded); err != nil {
+			fmt.Fprintln(os.Stderr, "setup infra failed:", err)
+
+			for key2 := range plan {
+				c2 := env.Clusters[key2]
+				_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", c2.Name)
+			}
+			os.Exit(1)
+		}
 	}
 
 	// 4) Run tests
 	code := m.Run()
 
-	// 5) Teardown
-	_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", env.Cluster.Name)
+	// 5) Teardown só dos clusters do plano
+	for key := range plan {
+		c := env.Clusters[key]
+		_ = utils.Exec(ctx, "kind", "delete", "cluster", "--name", c.Name)
+	}
 
 	os.Exit(code)
 }
