@@ -29,7 +29,7 @@ func resolvePlanFromCWD() spec.Plan {
 	default:
 		return spec.Plan{
 			"cluster-a": {Localstack: true, DynamoSeed: true},
-			"cluster-b": {NATS: true, Redis: true},
+			"cluster-b": {NATS: false, Redis: false},
 		}
 	}
 }

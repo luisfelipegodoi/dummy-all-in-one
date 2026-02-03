@@ -66,6 +66,28 @@ func TestMain(m *testing.M) {
 		}
 	}
 
+	// temp
+	lsEndpoint := env.Localstack.Endpoint // ex: http://localhost:4566 (ou NodePort)
+	region := "us-east-1"
+
+	dyn, err := awslocalstack.NewDynamoDB(ctx, region, lsEndpoint)
+	if err != nil { /* handle */
+	}
+
+	s3c, err := awslocalstack.NewS3(ctx, region, lsEndpoint)
+	if err != nil { /* handle */
+	}
+
+	// Dynamo
+	_ = dyn.EnsureTableSimplePK(ctx, "table1")
+	_ = dyn.EnsureTableSimplePK(ctx, "table2")
+
+	// S3
+	_ = s3c.EnsureBucket(ctx, "my-bucket")
+	_ = s3c.PutObject(ctx, "my-bucket", "spec.tmpl", []byte("hello"), "text/plain")
+	ok, _ := s3c.ObjectExists(ctx, "my-bucket", "spec.tmpl")
+	fmt.Println("exists:", ok)
+
 	// 4) Run tests
 	code := m.Run()
 

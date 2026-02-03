@@ -128,9 +128,7 @@ service:
     name: edge
     targetPort: 4566
     nodePort: 31566
-  externalServicePorts:
-    start: 4510
-    end: 4560
+  externalServicePorts: {}
     ## @param service.externalServicePorts.nodePortStart specifies the starting node ports the serviceports are mapped to
     ##   has to be in the node port range configured. See https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
     # nodePortStart: 31510
