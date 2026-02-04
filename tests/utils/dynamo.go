@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -49,53 +48,6 @@ func NewDynamoDB(ctx context.Context, region, endpoint string) (*DynamoClient, e
 	}
 
 	return &DynamoClient{Client: dynamodb.NewFromConfig(cfg)}, nil
-}
-
-// EnsureTableSimplePK creates a table with a single string partition key (pk:S),
-// if it does not exist. BillingMode PAY_PER_REQUEST.
-// Returns nil when already exists and ACTIVE.
-func (c *DynamoClient) EnsureTableSimplePK(ctx context.Context, table string) error {
-	return c.EnsureTable(ctx, types.CreateTableInput{
-		TableName: aws.String(table),
-		AttributeDefinitions: []types.AttributeDefinition{
-			{AttributeName: aws.String("pk"), AttributeType: types.ScalarAttributeTypeS},
-		},
-		KeySchema: []types.KeySchemaElement{
-			{AttributeName: aws.String("pk"), KeyType: types.KeyTypeHash},
-		},
-		BillingMode: types.BillingModePayPerRequest,
-	})
-}
-
-// EnsureTable creates a table if it doesn't exist and waits until ACTIVE.
-func (c *DynamoClient) EnsureTable(ctx context.Context, in types.CreateTableInput) error {
-	if in.TableName == nil || strings.TrimSpace(*in.TableName) == "" {
-		return errors.New("table name is empty")
-	}
-	table := *in.TableName
-
-	_, err := c.Client.DescribeTable(ctx, &dynamodb.DescribeTableInput{TableName: aws.String(table)})
-	if err == nil {
-		// already exists - still wait active (safe)
-		return c.WaitTableStatus(ctx, table, types.TableStatusActive, 30*time.Second)
-	}
-
-	var notFound *types.ResourceNotFoundException
-	if !errors.As(err, &notFound) {
-		return fmt.Errorf("describe table %q failed: %w", table, err)
-	}
-
-	// Create
-	_, err = c.Client.CreateTable(ctx, (*dynamodb.CreateTableInput)(&in))
-	if err != nil {
-		// If concurrent create, treat as ok and wait.
-		var inUse *types.ResourceInUseException
-		if !errors.As(err, &inUse) {
-			return fmt.Errorf("create table %q failed: %w", table, err)
-		}
-	}
-
-	return c.WaitTableStatus(ctx, table, types.TableStatusActive, 30*time.Second)
 }
 
 // WaitTableStatus polls DescribeTable until it matches the desired status.

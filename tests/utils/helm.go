@@ -50,7 +50,6 @@ func (h Helm) UpgradeInstall(ctx context.Context, opt HelmInstallOpts) error {
 	}
 
 	for _, vf := range opt.Values {
-		// aceita relativo; deixa bonito (não obriga)
 		args = append(args, "-f", filepath.Clean(vf))
 	}
 	for _, s := range opt.Set {
@@ -61,6 +60,7 @@ func (h Helm) UpgradeInstall(ctx context.Context, opt HelmInstallOpts) error {
 	res, err := ExecWithResult(ctx, CmdOptions{Timeout: timeout},
 		"helm", args...,
 	)
+
 	if err != nil {
 		fmt.Printf("HELM STDOUT:\n%s\n", res.Stdout)
 		fmt.Printf("HELM STDERR:\n%s\n", res.Stderr)

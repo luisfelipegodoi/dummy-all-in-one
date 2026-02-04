@@ -14,12 +14,17 @@ type Env struct {
 		KindConfig string `mapstructure:"kindConfig"`
 	} `mapstructure:"clusters"`
 
+	HelmApps map[string]struct {
+		Chart     string `mapstructure:"chart"`
+		Release   string `mapstructure:"release"`
+		Namespace string `mapstructure:"namespace"`
+	} `mapstructure:"helm"`
+
 	Timeouts struct {
 		CreateCluster time.Duration `mapstructure:"createCluster"`
 		Apply         time.Duration `mapstructure:"apply"`
+		Helm          time.Duration `mapstructure:"helm"`
 	} `mapstructure:"timeouts"`
-
-	// images map (nats/redis etc) pode ficar como você já fez
 }
 
 // LoadEnv reads config into Env, applies defaults and validates.
@@ -27,7 +32,7 @@ func LoadEnv(v *viper.Viper, repoRoot string) (Env, error) {
 	var e Env
 
 	// Defaults
-	v.SetDefault("cluster.name", "system-tests-lab")
+	v.SetDefault("cluster.name", "cluster-a")
 	v.SetDefault("timeouts.createCluster", "2m")
 	v.SetDefault("timeouts.apply", "2m")
 

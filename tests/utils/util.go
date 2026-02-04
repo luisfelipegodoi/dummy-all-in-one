@@ -64,7 +64,6 @@ func ExecWithResult(ctx context.Context, opt CmdOptions, name string, args ...st
 	}
 
 	err := cmd.Run()
-	fmt.Println(err.Error())
 
 	exitCode := 0
 	if err != nil {

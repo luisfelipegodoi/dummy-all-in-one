@@ -179,40 +179,6 @@ func (c *S3Client) GetObjectBytes(ctx context.Context, bucket, key string) ([]by
 	return io.ReadAll(out.Body)
 }
 
-// "Editar bucket" - exemplos úteis (opcionais):
-
-// SetBucketVersioning enables/disables bucket versioning.
-func (c *S3Client) SetBucketVersioning(ctx context.Context, bucket string, enabled bool) error {
-	status := s3.BucketVersioningStatusSuspended
-	if enabled {
-		status = s3.BucketVersioningStatusEnabled
-	}
-
-	_, err := c.Client.PutBucketVersioning(ctx, &s3.PutBucketVersioningInput{
-		Bucket: aws.String(bucket),
-		VersioningConfiguration: &s3.VersioningConfiguration{
-			Status: status,
-		},
-	})
-	return err
-}
-
-// PutBucketTags sets bucket tags (overwrites).
-func (c *S3Client) PutBucketTags(ctx context.Context, bucket string, tags map[string]string) error {
-	var t []s3typesTag
-	for k, v := range tags {
-		t = append(t, s3typesTag{Key: k, Value: v})
-	}
-
-	_, err := c.Client.PutBucketTagging(ctx, &s3.PutBucketTaggingInput{
-		Bucket: aws.String(bucket),
-		Tagging: &s3.Tagging{
-			TagSet: toSDKTags(t),
-		},
-	})
-	return err
-}
-
 // ---------- internals ----------
 
 // Minimal local tag struct to avoid importing extra package names in your code.
@@ -222,16 +188,8 @@ type s3typesTag struct {
 }
 
 // Convert to SDK type without leaking import details in your test code.
-func toSDKTags(in []s3typesTag) []s3typesTagSDK {
-	out := make([]s3typesTagSDK, 0, len(in))
-	for _, t := range in {
-		out = append(out, s3typesTagSDK{Key: aws.String(t.Key), Value: aws.String(t.Value)})
-	}
-	return out
-}
 
 // Local alias of SDK tag type (keeps file self-contained).
-type s3typesTagSDK = s3.Tag
 
 func isSmithyHTTPStatus(err error, code int) bool {
 	var re *smithy.OperationError
