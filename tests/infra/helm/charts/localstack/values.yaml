@@ -16,8 +16,8 @@ image:
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: "localstack"
+fullnameOverride: "localstack"
 
 ## @param extraDeploy Extra objects to deploy (value evaluated as a template)
 ##
@@ -75,7 +75,7 @@ command: []
 ## Ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
 # dnsPolicy: "Default"
 
-startServices: ""
+startServices: "dynamodb,s3"
 # Comma-separated list of AWS CLI service names which are the only ones allowed to be used (other services will then by default be prevented from being loaded).
 
 # kinesisErrorProbability: 0.0
@@ -93,11 +93,11 @@ mountDind:
 
 ## All the parameters from the configuatioan can be added using extraEnvVars.
 ## Ref. https://docs.localstack.cloud/references/configuration/
-## extraEnvVars:
-##   - name: DEFAULT_REGION
-##     value: "us-east-1"
-##   - name: SERVICES
-##     value: "serverless,sqs,es"
+extraEnvVars:
+  - name: DEFAULT_REGION
+    value: "sa-east-1"
+  - name: SERVICES
+    value: "dynamodb,s3"
 extraEnvVars: []
 
 ## envFrom Allows you to set additional environment variables from a ConfigMap or Secret
@@ -246,14 +246,16 @@ affinity: {}
 
 # Mount /etc/localstack/init/ready.d to run startup scripts with
 # {{ template "localstack.fullname" . }}-init-scripts-config configMap
-enableStartupScripts: false
+enableStartupScripts: true
 
 # Add startup scripts content used by {{ template "localstack.fullname" . }}-init-scripts-config configMap
 # to run at localstack startup
 # startupScriptContent: |
-  # awslocal s3 mb s3://testbucket
-  # awslocal sqs create-queue --queue-name test-queue
-startupScriptContent: ""
+#   awslocal s3 mb s3://testbucket
+#   # awslocal sqs create-queue --queue-name test-queue
+startupScriptContent: |
+  #!/bin/bash
+  awslocal s3 mb s3://testbucket
 
 # @param volumes Extra volumes to mount
 volumes: []

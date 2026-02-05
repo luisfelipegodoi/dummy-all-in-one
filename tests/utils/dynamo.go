@@ -21,7 +21,7 @@ type DynamoClient struct {
 
 func NewDynamoDB(ctx context.Context, region, endpoint string) (*DynamoClient, error) {
 	if region == "" {
-		region = "us-east-1"
+		region = "sa-east-1"
 	}
 	if endpoint == "" {
 		return nil, errors.New("dynamodb endpoint is required")

@@ -23,7 +23,7 @@ func SetupInfra(ctx context.Context, target ClusterTarget, infra spec.InfraSpec,
 	if infra.Localstack {
 		hm := utils.Helm{
 			KubeContext: target.KubeCtx,
-			Timeout:     env.Timeouts.Apply,
+			Timeout:     env.Timeouts.Helm,
 		}
 
 		opts := utils.HelmInstallOpts{
@@ -40,7 +40,16 @@ func SetupInfra(ctx context.Context, target ClusterTarget, infra spec.InfraSpec,
 	}
 
 	if infra.DynamoSeed {
-		// TODO: mover aqui o job do dynamodb
+		kube := utils.Kubectl{
+			Context: target.KubeCtx,
+			Timeout: env.Timeouts.Apply,
+		}
+
+		manifestFile := fmt.Sprintf("%s/%s", loaded.RepoRoot, env.ContainerApps["dynamodb"].Manifest)
+
+		if err := kube.ApplyFile(ctx, manifestFile); err != nil {
+			fmt.Errorf("error to apply manifest")
+		}
 	}
 
 	if infra.NATS {

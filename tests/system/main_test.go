@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	env := loaded.Env
 
 	// 1) resolver plano (o que vai em qual cluster)
-	plan := resolvePlanFromCWD()
+	plan := resolvePlan()
 
 	// 2) criar só os clusters que serão usados nesse flow
 	for key, infra := range plan {

@@ -20,6 +20,11 @@ type Env struct {
 		Namespace string `mapstructure:"namespace"`
 	} `mapstructure:"helm"`
 
+	ContainerApps map[string]struct {
+		Namespace string `mapstructure:"namespace"`
+		Manifest  string `mapstructure:"manifest"`
+	} `mapstructure:"container"`
+
 	Timeouts struct {
 		CreateCluster time.Duration `mapstructure:"createCluster"`
 		Apply         time.Duration `mapstructure:"apply"`
