@@ -1,6 +1,6 @@
 module tests
 
-go 1.24.1
+go 1.25.7
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1
@@ -30,6 +30,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.6 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/luisfelipegodoi/clusterforge v0.0.0-20260208012840-e1e8b1467839 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/sourcegraph/conc v0.3.1-0.20240121214520-5f936abd7ae8 // indirect
